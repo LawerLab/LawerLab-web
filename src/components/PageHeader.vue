@@ -5,16 +5,16 @@
         LawerLab
       </div>
       <div class="link absolute left-1/2 -translate-x-1/2 flex space-x-4">
-        <RouterLink to="/" class="text-gray-400 hover:text-gray-700" active-class="text-gray-700">
+        <RouterLink to="/" class="cursor-pointer select-none text-gray-400 hover:text-gray-700" active-class="text-gray-700">
           <Button variant="ghost">首页</Button>
         </RouterLink>
-        <RouterLink to="/project" class="text-gray-400 hover:text-gray-700" active-class="text-gray-700">
+        <RouterLink to="/project" class="cursor-pointer select-none text-gray-400 hover:text-gray-700" active-class="text-gray-700">
           <Button variant="ghost">项目</Button>
         </RouterLink>
-        <RouterLink to="/team" class="text-gray-400 hover:text-gray-700" active-class="text-gray-700">
+        <RouterLink to="/team" class="cursor-pointer select-none text-gray-400 hover:text-gray-700" active-class="text-gray-700">
           <Button variant="ghost">团队</Button>
         </RouterLink>
-        <RouterLink to="/about" class="text-gray-400 hover:text-gray-700" active-class="text-gray-700">
+        <RouterLink to="/about" class="cursor-pointer select-none text-gray-400 hover:text-gray-700" active-class="text-gray-700">
           <Button variant="ghost">关于</Button>
         </RouterLink>
       </div>
