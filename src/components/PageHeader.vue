@@ -1,10 +1,28 @@
 <template>
-  <header class="page-header-wrapper w-full sticky top-0 left-0 right-0 bg-white backdrop-blur-md border-b border-gray-100 p-3 flex justify-center items-center">
-    <div class="page-header relative mx-auto w-[1200px] flex justify-between items-center">
-      <div class="logo text-xl font-bold mr-10">
-        LawerLab
+  <header class="page-header-wrapper w-full sticky top-0 left-0 right-0 bg-white/90 backdrop-blur-md border-b border-gray-100 p-3 flex justify-center items-center">
+    <div class="page-header relative mx-auto w-full max-w-[1200px] flex justify-between items-center px-4">
+      <Sheet>
+        <SheetTrigger as-child class="md:block lg:hidden">
+          <button>
+            <span class="!block material-icons text-2xl text-gray-600">menu</span>
+          </button>
+        </SheetTrigger>
+        <SheetContent side="left" class="p-6">
+          <nav class="flex flex-col space-y-4 text-lg">
+            <RouterLink to="/" class="text-gray-700 hover:text-black">首页</RouterLink>
+            <RouterLink to="/project" class="text-gray-700 hover:text-black">项目</RouterLink>
+            <RouterLink to="/team" class="text-gray-700 hover:text-black">团队</RouterLink>
+            <RouterLink to="/about" class="text-gray-700 hover:text-black">关于</RouterLink>
+          </nav>
+        </SheetContent>
+      </Sheet>
+
+      <div class="logo flex gap-[0.75rem] items-center text-xl font-bold mr-auto ml-2">
+        <RoundedBorderLogo class="w-7 h-7 object-cover drop-shadow" />
+        <span class="hidden lg:block">LawerLab</span>
       </div>
-      <div class="link absolute left-1/2 -translate-x-1/2 flex space-x-4">
+      
+      <div class="link absolute left-1/2 -translate-x-1/2 max-md:hidden">
         <RouterLink to="/" class="cursor-pointer select-none text-gray-400 hover:text-gray-700" active-class="text-gray-700">
           <Button variant="ghost">首页</Button>
         </RouterLink>
@@ -18,7 +36,16 @@
           <Button variant="ghost">关于</Button>
         </RouterLink>
       </div>
-      <div class="scan">
+      
+      <div class="scan flex gap-[0.5rem]">
+        <DropdownMenu>
+          <DropdownMenuTrigger class="flex items-center">
+            <span class="material-icons block text-lg transition-all duration-300 cursor-pointer select-none text-gray-400 hover:text-gray-700">translate</span> 
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+
+          </DropdownMenuContent>
+        </DropdownMenu>
         <HoverCard>
           <HoverCardTrigger class="flex items-center">
             <span class="material-icons block text-lg transition-all duration-300 cursor-pointer select-none text-gray-400 hover:text-gray-700">qr_code</span> 
@@ -42,4 +69,21 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from '@/components/ui/hover-card'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet'
+import RoundedBorderLogo from '@/assets/images/logo/rounded_border_logo.svg'
 </script>
