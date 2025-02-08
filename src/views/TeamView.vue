@@ -9,7 +9,7 @@
     <div class="member-list flex items-center justify-center w-fit gap-[1rem] mt-6 m-auto max-md:flex-col">
       <Card class="flex gap-[1rem] w-fit p-3 max-md:w-full">
         <Avatar>
-          <AvatarImage src="public/images/avatar/Nina_avatar.jpg" />
+          <AvatarImage src="/images/avatar/Nina_avatar.jpg" />
         </Avatar>
         <div class="space-y-1">
           <h4 class="text-sm font-semibold">
@@ -28,7 +28,7 @@
       </Card>
       <Card class="flex gap-[1rem] w-fit p-3 max-md:w-full">
         <Avatar>
-          <AvatarImage src="public/images/avatar/AurLemon_avatar.jpg" />
+          <AvatarImage src="/images/avatar/AurLemon_avatar.jpg" />
         </Avatar>
         <div class="space-y-1">
           <h4 class="text-sm font-semibold">
