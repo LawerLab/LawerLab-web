@@ -1,14 +1,15 @@
 <script setup>
-import { HoverCardTrigger } from 'radix-vue';
+import { AvatarFallback } from 'radix-vue';
 
 const props = defineProps({
+  delayMs: { type: Number, required: false },
   asChild: { type: Boolean, required: false },
   as: { type: null, required: false },
 });
 </script>
 
 <template>
-  <HoverCardTrigger v-bind="props">
+  <AvatarFallback v-bind="props">
     <slot />
-  </HoverCardTrigger>
+  </AvatarFallback>
 </template>
