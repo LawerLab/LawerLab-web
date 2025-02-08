@@ -1,5 +1,6 @@
 import { fileURLToPath, URL } from 'node:url'
 import vue from '@vitejs/plugin-vue'
+import svgLoader from 'vite-svg-loader'
 import autoprefixer from 'autoprefixer'
 import tailwind from '@tailwindcss/vite'
 import { defineConfig } from 'vite'
@@ -11,7 +12,7 @@ export default defineConfig({
       plugins: [autoprefixer()],
     },
   },
-  plugins: [vue(), tailwind()],
+  plugins: [vue(), svgLoader(), tailwind()],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))

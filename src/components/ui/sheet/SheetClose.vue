@@ -1,5 +1,5 @@
 <script setup>
-import { HoverCardTrigger } from 'radix-vue';
+import { DialogClose } from 'radix-vue';
 
 const props = defineProps({
   asChild: { type: Boolean, required: false },
@@ -8,7 +8,7 @@ const props = defineProps({
 </script>
 
 <template>
-  <HoverCardTrigger v-bind="props">
+  <DialogClose v-bind="props">
     <slot />
-  </HoverCardTrigger>
+  </DialogClose>
 </template>
