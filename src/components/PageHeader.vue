@@ -12,7 +12,6 @@
             <RouterLink to="/" class="text-gray-700 hover:text-black">首页</RouterLink>
             <RouterLink to="/project" class="text-gray-700 hover:text-black">项目</RouterLink>
             <RouterLink to="/team" class="text-gray-700 hover:text-black">团队</RouterLink>
-            <RouterLink to="/about" class="text-gray-700 hover:text-black">关于</RouterLink>
           </nav>
         </SheetContent>
       </Sheet>
