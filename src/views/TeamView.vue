@@ -16,7 +16,7 @@
             Nina Naganohara
           </h4>
           <p class="text-sm">
-            团队代表人 & 第一开发者 & 逻辑编写 & 律师
+            团队负责人 & 第一开发 & 架构设计 & 界面设计 & 律师
           </p>
           <div class="flex items-center pt-2">
             <CalendarDays class="mr-2 h-4 w-4 opacity-70" />
@@ -35,7 +35,7 @@
             AurLemon
           </h4>
           <p class="text-sm">
-            第二开发者 & 界面编写 & 代码优化
+            第二开发 & 前端开发 & 架构优化
           </p>
           <div class="flex items-center pt-2">
             <CalendarDays class="mr-2 h-4 w-4 opacity-70" />
