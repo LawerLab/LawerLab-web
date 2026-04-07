@@ -1,6 +1,6 @@
 <template>
 	<header
-		class="page-header-wrapper w-full sticky top-0 left-0 right-0 z-30 bg-white/90 backdrop-blur-md border-b border-gray-100 p-3 flex justify-center items-center"
+		class="page-header-wrapper w-full sticky top-0 left-0 right-0 z-30 bg-background/90 backdrop-blur-md border-b border-border p-3 flex justify-center items-center text-foreground"
 	>
 		<div
 			class="page-header relative mx-auto w-full max-w-[1200px] flex justify-between items-center px-4"
@@ -38,39 +38,51 @@
 			<div class="link absolute left-1/2 -translate-x-1/2 max-md:hidden">
 				<RouterLink
 					to="/"
-					class="cursor-pointer select-none text-gray-400 hover:text-gray-700"
-					active-class="text-gray-700"
+					class="cursor-pointer select-none text-foreground/60 hover:text-foreground"
+					active-class="text-foreground"
 				>
 					<Button variant="ghost">首页</Button>
 				</RouterLink>
 				<RouterLink
 					to="/project"
-					class="cursor-pointer select-none text-gray-400 hover:text-gray-700"
-					active-class="text-gray-700"
+					class="cursor-pointer select-none text-foreground/60 hover:text-foreground"
+					active-class="text-foreground"
 				>
 					<Button variant="ghost">项目</Button>
 				</RouterLink>
 				<RouterLink
 					to="/team"
-					class="cursor-pointer select-none text-gray-400 hover:text-gray-700"
-					active-class="text-gray-700"
+					class="cursor-pointer select-none text-foreground/60 hover:text-foreground"
+					active-class="text-foreground"
 				>
 					<Button variant="ghost">我们</Button>
 				</RouterLink>
 			</div>
 
 			<div class="scan flex gap-[0.5rem]">
+				<Button
+					variant="ghost"
+					size="icon"
+					class="text-foreground/60 hover:text-foreground"
+					:aria-label="darkModeLabel"
+					:title="darkModeLabel"
+					@click="toggleDarkMode"
+				>
+					<span class="material-icons block text-xl">
+						{{ darkModeIcon }}
+					</span>
+				</Button>
 				<DropdownMenu>
 					<DropdownMenuTrigger class="flex items-center">
 						<span
-							class="material-icons block text-lg transition-all duration-300 cursor-pointer select-none text-gray-400 hover:text-gray-700"
+							class="material-icons block text-xl transition-all duration-300 cursor-pointer select-none text-foreground/60 hover:text-foreground"
 							>qr_code</span
 						>
 					</DropdownMenuTrigger>
 					<DropdownMenuContent
 						class="flex justify-center items-center flex-col gap-[1rem] p-4"
 					>
-						<div class="text-gray-600">打开微信扫一扫进入小程序</div>
+						<div class="text-foreground/70">打开微信扫一扫进入小程序</div>
 						<img
 							src="@/assets/images/toolkit/qr_code.jpg"
 							class="block w-[200px] object-cover"
@@ -83,6 +95,7 @@
 </template>
 
 <script setup>
+import { computed, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import { Button } from '@/components/ui/button'
@@ -103,4 +116,36 @@ import {
 	SheetTrigger,
 } from '@/components/ui/sheet'
 import RoundedBorderLogo from '@/assets/images/logo/rounded_border_logo.svg'
+
+const THEME_STORAGE_KEY = 'lawertoolkit-theme'
+const isDarkMode = ref(false)
+
+if (typeof window !== 'undefined') {
+	const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY)
+	const prefersDarkMode = window.matchMedia(
+		'(prefers-color-scheme: dark)',
+	).matches
+
+	isDarkMode.value = savedTheme ? savedTheme === 'dark' : prefersDarkMode
+
+	document.documentElement.classList.toggle('dark', isDarkMode.value)
+}
+
+watch(isDarkMode, (value) => {
+	if (typeof window === 'undefined') return
+
+	document.documentElement.classList.toggle('dark', value)
+	window.localStorage.setItem(THEME_STORAGE_KEY, value ? 'dark' : 'light')
+})
+
+const darkModeIcon = computed(() =>
+	isDarkMode.value ? 'light_mode' : 'dark_mode',
+)
+const darkModeLabel = computed(() =>
+	isDarkMode.value ? '切换到浅色模式' : '切换到深色模式',
+)
+
+function toggleDarkMode() {
+	isDarkMode.value = !isDarkMode.value
+}
 </script>

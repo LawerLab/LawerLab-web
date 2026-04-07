@@ -1,4 +1,5 @@
 import js from '@eslint/js'
+import prettier from 'eslint-config-prettier/flat'
 import globals from 'globals'
 import vue from 'eslint-plugin-vue'
 
@@ -23,6 +24,7 @@ export default [
 		},
 	},
 	...vue.configs['flat/recommended'],
+	prettier,
 	{
 		files: ['**/*.vue'],
 		languageOptions: {
@@ -34,21 +36,10 @@ export default [
 		rules: {
 			'vue/attribute-hyphenation': 'off',
 			'vue/attributes-order': 'off',
-			'vue/html-self-closing': [
-				'warn',
-				{
-					html: {
-						void: 'any',
-						normal: 'always',
-						component: 'always',
-					},
-					svg: 'always',
-					math: 'always',
-				},
-			],
 			'vue/multi-word-component-names': 'off',
 			'vue/no-use-v-if-with-v-for': 'warn',
 			'vue/require-v-for-key': 'warn',
+			'vue/require-default-prop': 'off',
 		},
 	},
 ]
