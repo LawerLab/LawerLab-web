@@ -1,31 +1,36 @@
 :root {
-  font-family: "Inter", "MiSans Latin", "Helvetica Neue", "Helvetica", "Roboto", "BlinkMacSystemFont", "MiSans", "HarmonyOS Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+	font-family:
+		'Inter', 'MiSans Latin', 'Helvetica Neue', 'Helvetica', 'Roboto',
+		'BlinkMacSystemFont', 'MiSans', 'HarmonyOS Sans SC', 'PingFang SC',
+		'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+	font-synthesis: none;
+	text-rendering: optimizeLegibility;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
 }
 
-*, *::before, *::after {
-  scrollbar-width: thin;
-  scrollbar-color: #dedede transparent;
+*,
+*::before,
+*::after {
+	scrollbar-width: thin;
+	scrollbar-color: #dedede transparent;
 }
 
 ::selection {
-  background-color: rgba(0, 0, 0, 0.1);
+	background-color: rgba(0, 0, 0, 0.1);
 }
 
 @font-face {
-  font-family: 'Inter';
-  src: url('@/assets/fonts/Inter.woff2') format('woff2');
+	font-family: 'Inter';
+	src: url('@/assets/fonts/Inter.woff2') format('woff2');
 }
 
 @font-face {
-  font-family: 'Caveat';
-  src: url('@/assets/fonts/Caveat.woff2') format('woff2');
+	font-family: 'Caveat';
+	src: url('@/assets/fonts/Caveat.woff2') format('woff2');
 }
 
 @font-face {
-  font-family: 'JetBrains Mono';
-  src: url('@/assets/fonts/JetBrains_Mono.woff2') format('woff2');
+	font-family: 'JetBrains Mono';
+	src: url('@/assets/fonts/JetBrains_Mono.woff2') format('woff2');
 }

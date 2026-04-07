@@ -1,0 +1,6 @@
+dist/**
+node_modules/**
+coverage/**
+.output/**
+pnpm-lock.yaml
+**/*.{jpg,jpeg,png,gif,webp,ico,woff,woff2,ttf,otf}

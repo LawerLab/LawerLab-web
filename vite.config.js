@@ -7,15 +7,15 @@ import { defineConfig } from 'vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-  css: {
-    postcss: {
-      plugins: [autoprefixer()],
-    },
-  },
-  plugins: [vue(), svgLoader(), tailwind()],
-  resolve: {
-    alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
-    }
-  }
+	css: {
+		postcss: {
+			plugins: [autoprefixer()],
+		},
+	},
+	plugins: [vue(), svgLoader(), tailwind()],
+	resolve: {
+		alias: {
+			'@': fileURLToPath(new URL('./src', import.meta.url)),
+		},
+	},
 })
