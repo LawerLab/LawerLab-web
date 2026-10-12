@@ -21,6 +21,9 @@
 						<RouterLink to="/project" class="text-gray-700 hover:text-black"
 							>项目</RouterLink
 						>
+						<RouterLink to="/tools/interest" class="text-gray-700 hover:text-black"
+							>工具</RouterLink
+						>
 						<RouterLink to="/team" class="text-gray-700 hover:text-black"
 							>团队</RouterLink
 						>
@@ -49,6 +52,13 @@
 					active-class="text-foreground"
 				>
 					<Button variant="ghost">项目</Button>
+				</RouterLink>
+				<RouterLink
+					to="/tools/interest"
+					class="cursor-pointer select-none text-foreground/60 hover:text-foreground"
+					active-class="text-foreground"
+				>
+					<Button variant="ghost">工具</Button>
 				</RouterLink>
 				<RouterLink
 					to="/team"
