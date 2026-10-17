@@ -136,6 +136,15 @@
 						<Button class="flex-1" @click="runCalculate">开始计算</Button>
 						<Button variant="outline" @click="resetForm">重置</Button>
 					</div>
+					<Button
+						variant="outline"
+						class="w-full"
+						:disabled="!result || isExporting"
+						@click="exportExcel"
+					>
+						<span class="material-icons text-base mr-1">download</span>
+						{{ isExporting ? '正在导出…' : '导出 Excel 表格' }}
+					</Button>
 				</CardContent>
 			</Card>
 
@@ -150,13 +159,31 @@
 
 				<Card v-if="result">
 					<CardHeader class="pb-3">
-						<CardTitle class="text-base flex items-center gap-2">
-							计算结果
-							<Badge variant="secondary">{{ modeLabel }}</Badge>
-						</CardTitle>
-						<CardDescription>
-							截止日 {{ form.end_date }} · 明细 {{ periodRows.length }} 个计息期
-						</CardDescription>
+						<div class="flex items-start justify-between gap-3">
+							<div class="min-w-0">
+								<CardTitle class="text-base flex items-center gap-2">
+									计算结果
+									<Badge variant="secondary">{{ modeLabel }}</Badge>
+								</CardTitle>
+								<CardDescription>
+									截止日 {{ form.end_date }} · 明细 {{ periodRows.length }} 个计息期
+								</CardDescription>
+							</div>
+							<Button
+								variant="outline"
+								class="shrink-0"
+								:disabled="isExporting"
+								@click="exportExcel"
+							>
+								<span class="material-icons text-base mr-1">
+									{{ isExporting ? 'hourglass_top' : 'download' }}
+								</span>
+								{{ isExporting ? '正在导出…' : '导出 Excel' }}
+							</Button>
+						</div>
+						<p v-if="exportMessage" class="text-xs text-green-600 mt-2">
+							{{ exportMessage }}
+						</p>
 					</CardHeader>
 					<CardContent class="space-y-4">
 						<div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -402,6 +429,34 @@ function runCalculate() {
 		result.value = calculateInterest({ ...form })
 	} catch (error) {
 		errorMessage.value = `错误：${error.message}`
+	}
+}
+
+/** 导出状态 */
+const isExporting = ref(false)
+const exportMessage = ref('')
+
+/**
+ * 导出 Excel。
+ * exceljs 体积较大，这里用动态 import：只有用户点击导出时才加载该模块，
+ * 不影响页面首屏。
+ */
+async function exportExcel() {
+	if (!result.value || isExporting.value) return
+	isExporting.value = true
+	exportMessage.value = ''
+	try {
+		const { downloadWorkbook } = await import('@/lib/interest/workbook.js')
+		const fileName = await downloadWorkbook({
+			result: result.value,
+			form: { ...form },
+			labels: { rateMode: modeLabel.value },
+		})
+		exportMessage.value = `已导出 ${fileName}`
+	} catch (error) {
+		errorMessage.value = `导出失败：${error.message}`
+	} finally {
+		isExporting.value = false
 	}
 }
 

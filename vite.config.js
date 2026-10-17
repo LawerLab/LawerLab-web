@@ -18,4 +18,11 @@ export default defineConfig({
 			'@': fileURLToPath(new URL('./src', import.meta.url)),
 		},
 	},
+	server: {
+		watch: {
+			// 本地验证工具的产物（导出的 xlsx、临时浏览器 profile 等）不应触发重载，
+			// 其中被外部进程锁定的文件会让 watcher 抛 EBUSY 并终止 dev server。
+			ignored: ['**/.dsh-verify/**'],
+		},
+	},
 })

@@ -19,6 +19,7 @@
 		"clsx": "^2.1.1",
 		"dayjs": "^1.11.20",
 		"embla-carousel-vue": "^8.6.0",
+		"exceljs": "^4.4.0",
 		"lucide-vue-next": "^1.0.0",
 		"material-icons": "^1.13.14",
 		"pinia": "^3.0.4",

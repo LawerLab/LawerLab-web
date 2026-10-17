@@ -314,6 +314,8 @@ export function calculateInterest(args) {
 			days,
 			rate: appliedRate,
 			principal: rowPrincipal,
+			// 期初本金：本事件生效前的债务本金，对应原 Excel 的「当期应还债务本金」
+			principalAtStart: rowPrincipal,
 			interestAccrued,
 			interestShouldBePaid,
 			newPrincipal: event.type === 'new_principal' ? Number(event.value) : 0,
@@ -321,6 +323,14 @@ export function calculateInterest(args) {
 			punishRate: withPunish && isPunishChanged && isPunishStarted ? PUNISH_FIXED_DAILY_RATE : 0,
 			punishAccrued: withPunish ? punishAccrued : 0,
 			punishShouldBePaid: withPunish ? punishShouldBePaid : 0,
+			// 实还拆分与期末剩余，由事件处理写回（见下方）
+			interestOwedBeforePayment: 0,
+			interestPaid: 0,
+			principalPaid: 0,
+			interestRemaining: 0,
+			principalRemaining: 0,
+			punishPaid: 0,
+			punishRemaining: withPunish ? punishShouldBePaid : 0,
 			eventType: event.type,
 		})
 	}
@@ -344,6 +354,11 @@ export function calculateInterest(args) {
 		if (wasStarted) {
 			accruePeriod(event)
 		}
+
+		// 事件生效前的状态，用于写出「实还利息 / 实还本金 / 期末剩余」
+		const owedInterestBefore = withPunish ? interestShouldBePaid : interestAccrued
+		const principalBefore = principal
+		const punishBefore = punishShouldBePaid
 
 		if (event.type === 'repayment') {
 			const amount = Number(event.value)
@@ -393,6 +408,21 @@ export function calculateInterest(args) {
 			isPunishStarted = true
 		} else if (event.type === 'a_punish_change') {
 			isPunishChanged = true
+		}
+
+		// 把「实还拆分」与「期末剩余」写回本期的明细行
+		const currentRow = rows[rows.length - 1]
+		if (currentRow) {
+			const owedInterestAfter = withPunish ? interestShouldBePaid : interestAccrued
+			currentRow.interestOwedBeforePayment = owedInterestBefore
+			currentRow.interestPaid = Math.max(owedInterestBefore - owedInterestAfter, 0)
+			currentRow.principalPaid = Math.max(principalBefore - principal, 0)
+			currentRow.interestRemaining = owedInterestAfter
+			currentRow.principalRemaining = principal
+			if (withPunish) {
+				currentRow.punishPaid = Math.max(punishBefore - punishShouldBePaid, 0)
+				currentRow.punishRemaining = punishShouldBePaid
+			}
 		}
 
 		if (isPunishStarted && isPunishChanged) {
