@@ -309,6 +309,8 @@ export function calculateInterest(args) {
 
 		// 明细表的「当期首日」= 本事件所属计息段的起始日
 		rows.push({
+			// 原始事件日期，供 mapPeriodDates 生成展示用连续日期轴
+			eventDate: event.date,
 			startDate: formatDate(startDate),
 			endDate: formatDate(endDateOfPeriod),
 			days,
@@ -410,18 +412,46 @@ export function calculateInterest(args) {
 			isPunishChanged = true
 		}
 
-		// 把「实还拆分」与「期末剩余」写回本期的明细行
+		/*
+		 * 把「实还拆分」与「期末剩余」写回本期的明细行。
+		 *
+		 * 这里不能用累加器的差值来推算：原文件在「还款额超过本息合计」时不会把
+		 * interest_should_be_paid 清零（总额口径要保持一致），差值会算成 0。
+		 * 因此按原 Excel 表格的写法，直接把还款额按「先冲一般利息 → 再冲本金 →
+		 * 最后冲加倍利息」拆分出来。
+		 */
 		const currentRow = rows[rows.length - 1]
 		if (currentRow) {
-			const owedInterestAfter = withPunish ? interestShouldBePaid : interestAccrued
 			currentRow.interestOwedBeforePayment = owedInterestBefore
-			currentRow.interestPaid = Math.max(owedInterestBefore - owedInterestAfter, 0)
-			currentRow.principalPaid = Math.max(principalBefore - principal, 0)
-			currentRow.interestRemaining = owedInterestAfter
-			currentRow.principalRemaining = principal
-			if (withPunish) {
-				currentRow.punishPaid = Math.max(punishBefore - punishShouldBePaid, 0)
-				currentRow.punishRemaining = punishShouldBePaid
+
+			if (event.type === 'repayment') {
+				const amount = Number(event.value) || 0
+				let punishPaid = 0
+				let usable = amount
+				if (withPunish && event.date.getTime() < ruleChangeDate.getTime()) {
+					// 2014-08-01 前：加倍利息按比例参与冲抵
+					const total = principalBefore + owedInterestBefore + punishBefore
+					punishPaid = total > 0 ? (amount * punishBefore) / total : 0
+					usable = amount - punishPaid
+				}
+				const interestPaid = Math.min(usable, owedInterestBefore)
+				const principalPaid = Math.min(usable - interestPaid, principalBefore)
+				currentRow.interestPaid = interestPaid
+				currentRow.principalPaid = principalPaid
+				currentRow.interestRemaining = Math.max(owedInterestBefore - interestPaid, 0)
+				currentRow.principalRemaining = Math.max(principalBefore - principalPaid, 0)
+				if (withPunish) {
+					currentRow.punishPaid =
+						event.date.getTime() < ruleChangeDate.getTime()
+							? punishPaid
+							: Math.max(usable - interestPaid - principalPaid, 0)
+					currentRow.punishRemaining = punishShouldBePaid
+				}
+			} else {
+				// 非还款事件：本期没有实还，余额沿用当前状态
+				currentRow.interestRemaining = owedInterestBefore
+				currentRow.principalRemaining = principal
+				if (withPunish) currentRow.punishRemaining = punishShouldBePaid
 			}
 		}
 
@@ -439,10 +469,14 @@ export function calculateInterest(args) {
 		if (event.type === 'lpr_end') break
 	}
 
-	// 只保留真正参与计息的期次：
-	// 起始事件那条占位行（天数为负）以及同日事件产生的零天行都不展示，
-	// 原文件的 Excel 输出同样不会写出这些行。
-	const periods = rows.filter((row) => row.days > 0)
+	// 展示用日期轴：与计息口径分开处理（见 mapPeriodDates 注释）
+	const periods = mapPeriodDates(
+		rows,
+		parseDate(endDateStr),
+		parseDate(firstEventDate),
+		withPunish,
+		startEvent ? { type: startEvent.type, value: startEvent.value } : null,
+	)
 
 	// 非罚息函数返回的第二个值是跨期累加的 interest_accrued，与罚息模式不同
 	const finalInterest = withPunish ? interestShouldBePaid : interestAccrued
@@ -464,6 +498,202 @@ export function calculateInterest(args) {
 
 function round2(value) {
 	return Math.round((Number(value) + Number.EPSILON) * 100) / 100
+}
+
+/**
+ * 会产生新计息起点的「开期事件」：新增本金、利率调整、加倍利息起算与规则变更。
+ * 还款不在此列——它不改变计息起算点，本行利息持续到下一个事件为止。
+ */
+const OPENING_EVENTS = new Set([
+	'new_principal',
+	'lpr_change',
+	'punish_start',
+	'a_punish_change',
+])
+
+/**
+ * 生成展示用的连续日期轴。
+ *
+ * 计息仍沿用原 Python 口径，以保证金额与原文一致；但表格与 Excel 的日期按业务
+ * 含义重排：
+ *   - 新增本金日、加倍利息起算日、利率调整日 → 作为「当期首日」；
+ *   - 还款日 → 直接收束当前期间，作为「当期末日」（不单独成行）；
+ *   - 计算截止日 → 最后一行的「当期末日」；
+ *   - 任意一行的「当期末日」严格等于下一行「当期首日」减 1 天。
+ *
+ * 由于引擎每行的金额对应「截至该事件日」的那一段，而展示区间是从该事件日开始，
+ * 因此这里把「事件日」作为边界、把「下一个事件的引擎行」作为本区间金额的来源，
+ * 这样年利率、本金、利息都与展示的日期区间一致。
+ *
+ * @param {Array}  rows        计息阶段生成的明细（含原始事件日期 eventDate）
+ * @param {Date}   cutoffDate  用户填写的计算截止日
+ * @param {Date}   loanStart   起始事件日（放款日）
+ * @param {boolean} withPunish 是否计加倍利息（决定「当期产生利息」的累计口径）
+ */
+function mapPeriodDates(rows, cutoffDate, loanStart, withPunish, startEventInfo) {
+	const oneDay = 86_400_000
+	// 同时兼容 Date 与 'YYYY-MM-DD'
+	const toMs = (d) =>
+		d instanceof Date ? d.getTime() : Date.parse(String(d) + 'T00:00:00Z')
+	const toIso = (ms) => new Date(ms).toISOString().slice(0, 10)
+
+	const loanStartMs = toMs(loanStart)
+	const cutoffMs = toMs(cutoffDate)
+
+	// 引擎行按事件日期分组；lpr_end 只作为计算终止标记
+	const byDate = new Map()
+	let endRow = null
+	for (const row of rows) {
+		if (row.eventType === 'lpr_end') {
+			endRow = row
+			continue
+		}
+		const key = toIso(toMs(row.eventDate))
+		if (!byDate.has(key)) byDate.set(key, [])
+		byDate.get(key).push(row)
+	}
+	const dates = [...byDate.keys()]
+		.filter((d) => toMs(d) >= loanStartMs && toMs(d) <= cutoffMs)
+		.sort()
+
+	/*
+	 * 逐日推进构建期间：
+	 *  - 开期事件 → 当天作为「当期首日」；
+	 *  - 还款 → 直接收束当期（还款日即末日，不再单独开一行）；
+	 *  - 若上一期也是由还款收束，则本期首日 = 上一期末日 + 1；
+	 *  - 最后一段延伸到计算截止日。
+	 */
+	const periods = []
+	let cursorMs = loanStartMs
+
+	/*
+	 * 起始事件（放款日）在引擎里可能没有独立明细行（它是计息起点，不参与结算）。
+	 * 这里按需补一条「起始事件行」，保证首期的日期、事件标签与金额都完整。
+	 */
+	const loanStartKey = toIso(loanStartMs)
+	let startRows = []
+	if (startEventInfo && !byDate.has(loanStartKey)) {
+		startRows = [
+			{
+				eventType: startEventInfo.type,
+				eventDate: new Date(loanStartMs),
+				principal: 0,
+				newPrincipal: startEventInfo.type === 'new_principal' ? Number(startEventInfo.value) || 0 : 0,
+				repayment: startEventInfo.type === 'repayment' ? Number(startEventInfo.value) || 0 : 0,
+			},
+		]
+	}
+
+	const pushPeriod = (endMs, closureRows, closedBy) => {
+		if (endMs < cursorMs) return
+		periods.push({ startMs: cursorMs, endMs, startRows, closureRows, closedBy })
+	}
+
+	for (const date of dates) {
+		const dateMs = toMs(date)
+		const evts = byDate.get(date)
+		const openingRows = evts.filter((e) => OPENING_EVENTS.has(e.eventType))
+		const repaymentRows = evts.filter((e) => e.eventType === 'repayment')
+
+		// 1) 还款优先：直接收束当期（还款日即末日，不单独成行）
+		if (repaymentRows.length) {
+			pushPeriod(dateMs, evts, 'repayment')
+			cursorMs = dateMs + oneDay
+			startRows = []
+		}
+
+		// 2) 开期事件：当天作为新一期的首日；若当天已被还款收束，则从次日起算
+		if (openingRows.length) {
+			if (cursorMs < dateMs) {
+				pushPeriod(dateMs - oneDay, openingRows, 'opening')
+				cursorMs = dateMs
+				startRows = openingRows.slice()
+			} else {
+				// 当天正是当前期间首日（如放款日），或已被还款收束（从次日起算）
+				startRows = startRows.concat(openingRows)
+			}
+		}
+	}
+
+	// 收尾：最后一段延伸到计算截止日
+	if (cursorMs <= cutoffMs) {
+		pushPeriod(cutoffMs, endRow ? [endRow] : [], 'cutoff')
+	}
+
+	return periods
+		.map(({ startMs, endMs, startRows: sRows, closureRows, closedBy }) => {
+			const closure = closureRows.length
+				? closureRows[closureRows.length - 1]
+				: endRow
+			if (!closure) return null
+
+			const startRow = sRows[0] ?? closure
+			const days = Math.round((endMs - startMs) / oneDay) + 1
+
+			// 事件标签：起始事件 + 收束事件
+			const eventTypes = []
+			const pushType = (type) => {
+				if (type && !eventTypes.includes(type)) eventTypes.push(type)
+			}
+			sRows.forEach((r) => pushType(r.eventType))
+			if (closedBy === 'repayment') closureRows.forEach((r) => pushType(r.eventType))
+			if (closedBy === 'cutoff') pushType('lpr_end')
+
+			const sumOf = (list, field) =>
+				list.reduce((sum, r) => sum + (Number(r[field]) || 0), 0)
+
+			// 本期新增本金
+			const newPrincipal = sumOf(sRows, 'newPrincipal')
+			/*
+			 * 「当期应还债务本金」= 本期期初本金 + 本期新增本金。
+			 * 例如本期既放款/加贷又计息时，应按加入后的本金展示。
+			 */
+			const periodPrincipal = (Number(startRow.principal) || 0) + newPrincipal
+
+			const interestPaid = sumOf(closureRows, 'interestPaid')
+			const principalPaid = sumOf(closureRows, 'principalPaid')
+			const punishPaid = sumOf(closureRows, 'punishPaid')
+
+			return {
+				...closure,
+				eventType: eventTypes[0] ?? closure.eventType,
+				eventTypes,
+				startDate: toIso(startMs),
+				endDate: toIso(endMs),
+				days,
+				displayDays: days,
+				principal: periodPrincipal,
+				principalAtStart: periodPrincipal,
+				newPrincipal,
+				repayment: closedBy === 'repayment' ? sumOf(closureRows, 'repayment') : 0,
+				/*
+				 * 「当期产生利息」：罚息模式下 interestAccrued 是当期增量，
+				 * 需要把被合并的各期累加；非罚息模式下它是跨期累计，取收束行即可。
+				 */
+				interestAccrued: withPunish
+					? sumOf(closureRows, 'interestAccrued')
+					: Number(closure.interestAccrued) || 0,
+				punishAccrued: sumOf(closureRows, 'punishAccrued'),
+				interestPaid,
+				principalPaid,
+				punishPaid,
+				/*
+				 * 「当期剩余」必须按本期自身的口径算，不能直接沿用收束行：
+				 * 收束行往往就是「下一期新增本金」的那一行，它的剩余本金已经包含
+				 * 新增金额，若沿用会把下一期的增额提前算进本期。
+				 */
+				interestRemaining: Math.max(
+					(Number(closure.interestShouldBePaid) || 0) - interestPaid,
+					0,
+				),
+				principalRemaining: Math.max(periodPrincipal - principalPaid, 0),
+				punishRemaining: Math.max(
+					(Number(closure.punishShouldBePaid) || 0) - punishPaid,
+					0,
+				),
+			}
+		})
+		.filter((row) => row && row.displayDays > 0)
 }
 
 /** 与 Python f"{value:.2f}" 一致的格式化（保留两位小数） */

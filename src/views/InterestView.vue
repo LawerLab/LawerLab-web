@@ -254,7 +254,7 @@
 											<td class="num tabular-nums">{{ toFixed2(row.punishShouldBePaid) }}</td>
 										</template>
 										<td class="whitespace-nowrap text-muted-foreground text-xs">
-											{{ eventLabel(row.eventType) }}
+											{{ eventLabels(row) }}
 										</td>
 									</tr>
 								</tbody>
@@ -327,12 +327,11 @@ const errorMessage = ref('')
 const withPunish = computed(() => form.v_punish === '1')
 
 /**
- * 明细仅展示真正产生了利息的期次。
- * 本金为 0 的利率调整期（放款前的分段）不参与计息，展示出来会干扰阅读。
+ * 明细直接展示引擎产出的区间。
+ * 引擎已按业务口径重排日期（开期事件作首日、还款与截止作末日、区间连续），
+ * 并剔除了放款前的空档期，因此页面与 Excel 导出的行完全一致。
  */
-const periodRows = computed(() =>
-	result.value ? result.value.rows.filter((row) => row.principal > 0) : [],
-)
+const periodRows = computed(() => (result.value ? result.value.rows : []))
 
 const modeLabel = computed(() => {
 	const found = RATE_METHODS.find((item) => item.value === form.value_rate)
@@ -367,6 +366,21 @@ const EVENT_LABELS = {
 
 function eventLabel(type) {
 	return EVENT_LABELS[type] || type
+}
+
+/**
+ * 一行的「事件」列可能包含多个事件（例如一期之内既有新增本金又有还款），
+ * 引擎会给出 eventTypes 数组，这里按顺序用顿号连接。
+ * 空数组表示该期没有发生事件（例如还款之后到下一个利率调整日之间的过渡期）。
+ */
+function eventLabels(row) {
+	const types = Array.isArray(row.eventTypes)
+		? row.eventTypes
+		: row.eventType
+			? [row.eventType]
+			: []
+	if (!types.length) return '—'
+	return types.map(eventLabel).join('、')
 }
 
 function formatRate(rate) {
